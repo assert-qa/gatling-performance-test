@@ -2,10 +2,8 @@ package requests;
 
 import io.gatling.javaapi.core.ChainBuilder;
 
-import static io.gatling.javaapi.core.CoreDsl.exec;
-import static io.gatling.javaapi.http.HttpDsl.http;
-import static io.gatling.javaapi.http.HttpDsl.status;
-import static io.gatling.javaapi.http.HttpDsl.jsonPath;
+import static io.gatling.javaapi.core.CoreDsl.*;
+import static io.gatling.javaapi.http.HttpDsl.*;
 
 /**
  * Authentication Requests for Restful Booker API
@@ -21,11 +19,7 @@ public class AuthRequests {
     public static ChainBuilder createToken() {
         return exec(http("Create Token")
             .post("/auth")
-            .body(
-                io.gatling.javaapi.core.CoreDsl.StringBody(
-                    "{\"username\":\"admin\",\"password\":\"password123\"}"
-                )
-            )
+            .body(StringBody("{\"username\":\"admin\",\"password\":\"password123\"}"))
             .check(status().is(200))
             .check(jsonPath("$.token").exists())
             .check(jsonPath("$.token").saveAs("authToken")));

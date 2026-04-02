@@ -4,13 +4,13 @@ import io.gatling.javaapi.core.ScenarioBuilder;
 import io.gatling.javaapi.core.Simulation;
 import config.Protocols;
 import scenarios.BrowsingScenario;
+import java.time.Duration;
 
 import static io.gatling.javaapi.core.CoreDsl.*;
 
 /**
  * Product Browsing Simulation for Restful Booker API
  * Tests booking list retrieval and read operations
- * 
  * Run with: mvn gatling:test -Dgatling.simulationClass=simulations.ProductBrowsingSimulation
  */
 public class ProductBrowsingSimulation extends Simulation {
@@ -20,13 +20,13 @@ public class ProductBrowsingSimulation extends Simulation {
     {
         setUp(
             scn.injectOpen(
-                rampUsers(20).during(ofSeconds(30))
+                rampUsers(20).during(Duration.ofSeconds(30))
             )
         )
         .protocols(Protocols.HTTP_PROTOCOL)
         .assertions(
             global().responseTime().max().lt(3000),
-            global().responseTime().percentile95().lt(2000),
+            global().responseTime().percentile(95.0).lt(2000),
             global().successfulRequests().percent().gte(98.0)
         );
     }

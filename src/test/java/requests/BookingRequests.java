@@ -2,10 +2,8 @@ package requests;
 
 import io.gatling.javaapi.core.ChainBuilder;
 
-import static io.gatling.javaapi.core.CoreDsl.exec;
-import static io.gatling.javaapi.http.HttpDsl.http;
-import static io.gatling.javaapi.http.HttpDsl.status;
-import static io.gatling.javaapi.http.HttpDsl.jsonPath;
+import static io.gatling.javaapi.core.CoreDsl.*;
+import static io.gatling.javaapi.http.HttpDsl.*;
 
 /**
  * Booking Requests for Restful Booker API
@@ -21,19 +19,20 @@ public class BookingRequests {
         return exec(http("Get Booking List")
             .get("/booking")
             .check(status().is(200))
-            .check(jsonPath("$[*].bookingid").exists())
-            .check(jsonPath("$").count().saveAs("bookingCount")));
+            .check(jsonPath("[*].bookingid").exists())
+            .check(jsonPath("[]").count().saveAs("bookingCount"))
+            .check(jsonPath("[*].bookingid").findAll().saveAs("bookings")));
     }
 
     /**
      * Get booking by ID
      * GET /booking/{id}
-     * Uses bookingid from feeder
+     * Uses bookingId from createBooking()
+     * Does NOT require authentication
      */
     public static ChainBuilder getBookingById() {
         return exec(http("Get Booking By ID")
             .get("/booking/#{bookingId}")
-            .header("Authorization", "Bearer #{authToken}")
             .check(status().is(200))
             .check(jsonPath("$.firstname").exists())
             .check(jsonPath("$.lastname").exists()));
@@ -43,64 +42,66 @@ public class BookingRequests {
      * Create new booking
      * POST /booking
      * Body: booking details
+     * Response: { "bookingid": <id>, "booking": {...} }
      */
     public static ChainBuilder createBooking() {
         return exec(http("Create Booking")
             .post("/booking")
-            .body(
-                io.gatling.javaapi.core.CoreDsl.StringBody(
-                    "{" +
-                    "\"firstname\":\"John\"," +
-                    "\"lastname\":\"Doe\"," +
-                    "\"totalprice\":100," +
-                    "\"depositpaid\":true," +
-                    "\"bookingdates\":{" +
-                    "\"checkin\":\"2024-01-01\"," +
-                    "\"checkout\":\"2024-01-07\"" +
-                    "}," +
-                    "\"additionalneeds\":\"Breakfast\"" +
-                    "}"
-                )
-            )
+            .header("Content-Type", "application/json")
+            .body(StringBody(
+                "{" +
+                "\"firstname\":\"John\"," +
+                "\"lastname\":\"Doe\"," +
+                "\"totalprice\":100," +
+                "\"depositpaid\":true," +
+                "\"bookingdates\":{" +
+                "\"checkin\":\"2024-01-01\"," +
+                "\"checkout\":\"2024-01-07\"" +
+                "}," +
+                "\"additionalneeds\":\"Breakfast\"" +
+                "}"
+            ))
             .check(status().is(200))
-            .check(jsonPath("$.bookingid").exists())
-            .check(jsonPath("$.bookingid").saveAs("newBookingId")));
+            .check(substring("bookingid"))
+            .check(jsonPath("$.bookingid").ofInt().saveAs("bookingId")));
     }
 
     /**
-     * Update booking (requires token)
+     * Update booking (requires token as Cookie)
      * PUT /booking/{id}
+     * Token passed in Cookie header from createToken()
      */
     public static ChainBuilder updateBooking() {
         return exec(http("Update Booking")
-            .put("/booking/#{newBookingId}")
-            .header("Authorization", "Bearer #{authToken}")
-            .body(
-                io.gatling.javaapi.core.CoreDsl.StringBody(
-                    "{" +
-                    "\"firstname\":\"Jane\"," +
-                    "\"lastname\":\"Smith\"," +
-                    "\"totalprice\":150," +
-                    "\"depositpaid\":true," +
-                    "\"bookingdates\":{" +
-                    "\"checkin\":\"2024-02-01\"," +
-                    "\"checkout\":\"2024-02-07\"" +
-                    "}," +
-                    "\"additionalneeds\":\"Wifi\"" +
-                    "}"
-                )
-            )
+            .put("/booking/#{bookingId}")
+            .header("Content-Type", "application/json")
+            .header("Cookie", "token=#{authToken}")
+            .body(StringBody(
+                "{" +
+                "\"firstname\":\"Jane\"," +
+                "\"lastname\":\"Smith\"," +
+                "\"totalprice\":150," +
+                "\"depositpaid\":true," +
+                "\"bookingdates\":{" +
+                "\"checkin\":\"2024-02-01\"," +
+                "\"checkout\":\"2024-02-07\"" +
+                "}," +
+                "\"additionalneeds\":\"Wifi\"" +
+                "}"
+            ))
             .check(status().is(200)));
     }
 
     /**
-     * Delete booking (requires token)
+     * Delete booking (requires token as Cookie)
      * DELETE /booking/{id}
+     * Token passed in Cookie header from createToken()
+     * Returns status 201 with body "Created"
      */
     public static ChainBuilder deleteBooking() {
         return exec(http("Delete Booking")
-            .delete("/booking/#{newBookingId}")
-            .header("Authorization", "Bearer #{authToken}")
+            .delete("/booking/#{bookingId}")
+            .header("Cookie", "token=#{authToken}")
             .check(status().is(201)));
     }
 
@@ -110,11 +111,11 @@ public class BookingRequests {
     public static ChainBuilder completeBookingFlow() {
         return createBooking()
             .pause(1)
-            .exec(getBookingById().param("bookingId", "#{newBookingId}"))
+            .exec(getBookingById())
             .pause(1)
-            .updateBooking()
+            .exec(updateBooking())
             .pause(1)
-            .deleteBooking();
+            .exec(deleteBooking());
     }
 }
 

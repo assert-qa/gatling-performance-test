@@ -29,9 +29,9 @@ public class PingRequests {
     public static ChainBuilder repeatPing() {
         return ping()
             .pause(1)
-            .ping()
+            .exec(http("Ping Health Check 2").get("/ping").check(status().is(201)))
             .pause(1)
-            .ping();
+            .exec(http("Ping Health Check 3").get("/ping").check(status().is(201)));
     }
 }
 

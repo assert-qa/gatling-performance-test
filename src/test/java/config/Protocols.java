@@ -1,6 +1,7 @@
 package config;
 
 import io.gatling.javaapi.http.HttpProtocolBuilder;
+import java.time.Duration;
 
 import static io.gatling.javaapi.http.HttpDsl.http;
 
@@ -10,7 +11,6 @@ public class Protocols {
         .baseUrl(Environment.BASE_URL)
         .acceptHeader("application/json")
         .contentTypeHeader("application/json")
-        .userAgentHeader("Gatling Performance Test")
-        .requestTimeout(Environment.TIMEOUT);
+        .userAgentHeader("Gatling Performance Test");
 }
 

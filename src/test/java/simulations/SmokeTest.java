@@ -1,4 +1,4 @@
-package simulations;
+                                                   package simulations;
 
 import io.gatling.javaapi.core.ScenarioBuilder;
 import io.gatling.javaapi.core.Simulation;
@@ -10,7 +10,6 @@ import static io.gatling.javaapi.core.CoreDsl.*;
 /**
  * Smoke Test for Restful Booker API
  * Basic health check to verify API is accessible
- * 
  * Run with: mvn gatling:test -Dgatling.simulationClass=simulations.SmokeTest
  */
 public class SmokeTest extends Simulation {
